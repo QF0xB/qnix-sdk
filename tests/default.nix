@@ -177,6 +177,12 @@ let
     ]))
   );
 
+  dottedPathRejected = builtins.tryEval (
+    (sdk.mkRepository {
+      features = ./invalid-repository/features;
+    }).featureNames
+  );
+
   result = {
     defaultNamespace = defaultSdk.namespace;
     customNamespace = sdk.namespace;
@@ -186,6 +192,7 @@ let
     laptopDefault = evaluated.config.custom.qnix.context.laptop;
     invalidRequiresRejected = !invalidRequires.success;
     incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
+    dottedPathRejected = !dottedPathRejected.success;
     helperConfig = sdk.mkQnixConfig lib { marker = true; };
     repositoryFeatureNames = repository.featureNames;
     inferredEnvironments = repository.features."system.inferred".supportedEnvironments;
@@ -233,6 +240,7 @@ assert result.enableDefault;
 assert result.laptopDefault;
 assert result.invalidRequiresRejected;
 assert result.incompatibleHomeDependencyRejected;
+assert result.dottedPathRejected;
 assert result.helperConfig.custom.qnix.marker;
 assert
   result.repositoryFeatureNames == [

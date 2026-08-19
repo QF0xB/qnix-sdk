@@ -24,6 +24,8 @@ let
     suffix: value:
     builtins.substring 0 (builtins.stringLength value - builtins.stringLength suffix) value;
 
+  hasDot = value: builtins.match ".*[.].*" value != null;
+
   discoverNixFiles =
     root:
     let
@@ -36,7 +38,10 @@ let
             path = directory + "/${name}";
           in
           if kind == "directory" then
-            result // visit path (prefix ++ [ name ])
+            if hasDot name then
+              throw "qnix-sdk: repository paths cannot contain dots: '${builtins.concatStringsSep "/" (prefix ++ [ name ])}'"
+            else
+              result // visit path (prefix ++ [ name ])
           else if
             kind == "regular" && hasSuffix ".nix" name && name != "default.nix" && !hasPrefix "_" name
           then
@@ -45,12 +50,15 @@ let
               optionPath = prefix ++ [ leaf ];
               key = builtins.concatStringsSep "." optionPath;
             in
-            result
-            // {
-              ${key} = {
-                inherit path optionPath;
-              };
-            }
+            if hasDot leaf then
+              throw "qnix-sdk: repository paths cannot contain dots: '${builtins.concatStringsSep "/" optionPath}'"
+            else
+              result
+              // {
+                ${key} = {
+                  inherit path optionPath;
+                };
+              }
           else
             result
         ) { } (builtins.attrNames (builtins.readDir directory));
