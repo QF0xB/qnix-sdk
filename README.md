@@ -253,8 +253,9 @@ selection.integratedHomeModule
 selection.standaloneHomeModule
 ```
 
-Standalone rendering fails when its selected closure contains a feature that
-does not declare `standalone-home` support.
+Home rendering fails when its selected closure contains a feature that does not
+declare support for the requested Home environment. Place NixOS-only features in
+the `nixos` profile group rather than `shared` or `home`.
 
 Files named `default.nix` and files whose names start with `_` are ignored by
 repository discovery and can be used for local helpers.

@@ -18,17 +18,34 @@ let
   unsupportedStandalone =
     features: builtins.filter (feature: !supports "standalone-home" feature) features;
 
+  unsupportedIntegrated =
+    features: builtins.filter (feature: !supports "integrated-home" feature) features;
+
+  unsupportedMessage =
+    environment: features:
+    "qnix-sdk: ${environment} does not support: ${builtins.concatStringsSep ", " (builtins.map (feature: feature.name) features)}";
+
   standaloneModules =
     selection:
     let
       resolved = resolveSelection "standalone-home" selection;
       unsupported = unsupportedStandalone resolved.features;
-      unsupportedNames = builtins.map (feature: feature.name) unsupported;
     in
     if unsupported != [ ] then
-      throw "qnix-sdk: standalone Home Manager does not support: ${builtins.concatStringsSep ", " unsupportedNames}"
+      throw (unsupportedMessage "standalone Home Manager" unsupported)
     else
       commonOwnerModules resolved ++ concatFeatureModules "homeModules" resolved.features;
+
+  integratedModules =
+    selection:
+    let
+      resolved = resolveSelection "integrated-home" selection;
+      unsupported = unsupportedIntegrated resolved.features;
+    in
+    if unsupported != [ ] then
+      throw (unsupportedMessage "integrated Home Manager" unsupported)
+    else
+      concatFeatureModules "homeModules" resolved.features;
 in
 {
   modulesFor = {
@@ -40,13 +57,7 @@ in
       in
       commonOwnerModules resolved ++ concatFeatureModules "nixosModules" supported;
 
-    integratedHome =
-      selection:
-      let
-        resolved = resolveSelection "integrated-home" selection;
-        supported = builtins.filter (supports "integrated-home") resolved.features;
-      in
-      concatFeatureModules "homeModules" supported;
+    integratedHome = integratedModules;
 
     standaloneHome = standaloneModules;
   };

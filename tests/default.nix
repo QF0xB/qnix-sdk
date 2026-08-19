@@ -144,6 +144,15 @@ let
     builtins.length (repository.modulesFor.standaloneHome [ "integrated" ])
   );
 
+  unsupportedIntegrated = builtins.tryEval (
+    builtins.length (sdk.modulesFor.integratedHome (sdk.composeProfiles [
+      (sdk.mkProfile {
+        name = "unsupported-integrated";
+        features = [ polkit ];
+      })
+    ]))
+  );
+
   invalidRequires = builtins.tryEval (
     (sdk.mkFeature {
       name = "invalid";
@@ -232,6 +241,7 @@ let
     statefulHomeLoaded = repositoryStandaloneHome.config.test.statefulHomeLoaded;
     disabledImplementationValue = disabledRepositoryNixos.config.test.nixosVolume;
     unsupportedStandaloneRejected = !unsupportedStandalone.success;
+    unsupportedIntegratedRejected = !unsupportedIntegrated.success;
   };
 in
 assert result.defaultNamespace == [ "qnix" ];
@@ -290,4 +300,5 @@ assert result.integratedPortalLoaded;
 assert result.statefulHomeLoaded;
 assert result.disabledImplementationValue == 0;
 assert result.unsupportedStandaloneRejected;
+assert result.unsupportedIntegratedRejected;
 result
