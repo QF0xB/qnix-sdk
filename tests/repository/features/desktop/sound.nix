@@ -1,5 +1,3 @@
-{ integrations }:
-
 {
   environments = [
     "nixos"
@@ -11,8 +9,6 @@
     nixos = [ "base.marker" ];
     home = [ "base.marker" ];
   };
-
-  imports.nixos = [ integrations.testModule ];
 
   persistence.root.directories = [ "/var/lib/sound" ];
 

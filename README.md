@@ -96,9 +96,9 @@ must not have an enable option:
 ```
 
 Option-only features require explicit environments and cannot contain
-implementations, persistence contributions, or upstream imports. Regular
-features always receive an enable option. `enableOption` can override its
-description, default, or other `mkEnableOption` attributes.
+implementations or persistence contributions. Regular features always receive
+an enable option. `enableOption` can override its description, default, or
+other `mkEnableOption` attributes.
 
 ### Environment contract
 
@@ -151,36 +151,20 @@ Requirements use discovered feature names:
 Dependencies are resolved before their dependents and retain cycle, duplicate,
 and option-path validation from the descriptor API.
 
-### Integrations and upstream modules
+### Upstream modules
 
-Repositories can provide external modules without coupling the SDK to a
-specific flake input:
-
-```nix
-qnix = sdk.mkRepository {
-  features = ./features;
-  profiles = ./profiles;
-
-  integrations.impermanence =
-    inputs.impermanence.nixosModules.impermanence;
-};
-```
-
-Feature and profile definitions may be functions receiving `integrations`:
+Import external modules in the host configuration, where flake inputs are
+resolved, rather than in feature definitions:
 
 ```nix
-{ integrations }:
-
-{
-  imports.nixos = [ integrations.impermanence ];
-  nixos = { ... }: { };
-}
+modules =
+  [ inputs.impermanence.nixosModules.impermanence ]
+  ++ qnix.modulesFor.nixos [ "desktop" ];
 ```
 
-Available import groups are `nixos`, `integratedHome`, and `standaloneHome`.
-Upstream imports are selected with the feature and remain unconditional when
-the generated feature enable option is false. This ensures their option schema
-exists before the guarded QNix implementation is evaluated.
+Feature and profile files are plain attribute sets. They only configure the
+options exposed by the host's module composition; they do not receive flake
+inputs or import upstream modules.
 
 ### Persistence contributions
 

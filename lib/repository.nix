@@ -66,49 +66,14 @@ let
     visit root [ ];
 
   loadDefinition =
-    kind: entry: args:
+    kind: entry:
     let
-      imported = import entry.path;
-      definition = if builtins.isFunction imported then imported args else imported;
+      definition = import entry.path;
     in
     if builtins.isAttrs definition then
       definition
     else
       throw "qnix-sdk: ${kind} '${builtins.concatStringsSep "." entry.optionPath}' must evaluate to an attribute set";
-
-  normalizeImports =
-    name: imports:
-    if !builtins.isAttrs imports then
-      throw "qnix-sdk: feature '${name}' imports must be an attribute set"
-    else
-      let
-        keys = builtins.attrNames imports;
-      in
-      if
-        builtins.any (
-          key:
-          !builtins.elem key [
-            "nixos"
-            "integratedHome"
-            "standaloneHome"
-          ]
-        ) keys
-      then
-        throw "qnix-sdk: feature '${name}' imports only supports 'nixos', 'integratedHome', and 'standaloneHome'"
-      else if
-        !builtins.all builtins.isList [
-          (imports.nixos or [ ])
-          (imports.integratedHome or [ ])
-          (imports.standaloneHome or [ ])
-        ]
-      then
-        throw "qnix-sdk: feature '${name}' import groups must be lists"
-      else
-        {
-          nixos = imports.nixos or [ ];
-          integratedHome = imports.integratedHome or [ ];
-          standaloneHome = imports.standaloneHome or [ ];
-        };
 
   evalSpec =
     description: spec: args:
@@ -146,12 +111,12 @@ let
       };
 
   normalizeEnvironments =
-    name: definition: imports:
+    name: definition:
     let
       optionsOnly = definition.optionsOnly or false;
-      hasNixos = definition ? nixos || definition ? persistence || imports.nixos != [ ];
-      hasIntegratedHome = definition ? home || imports.integratedHome != [ ];
-      hasStandaloneHome = definition ? home || imports.standaloneHome != [ ];
+      hasNixos = definition ? nixos || definition ? persistence;
+      hasIntegratedHome = definition ? home;
+      hasStandaloneHome = definition ? home;
       explicit = definition.environments or null;
       standaloneHome = definition.standaloneHome or false;
       inferred =
@@ -163,6 +128,8 @@ let
     in
     if definition ? generateEnable then
       throw "qnix-sdk: feature '${name}' uses removed generateEnable; use optionsOnly for schema features"
+    else if definition ? imports then
+      throw "qnix-sdk: feature '${name}' uses removed imports; import upstream modules in the host configuration"
     else if explicit != null && definition ? standaloneHome then
       throw "qnix-sdk: feature '${name}' cannot set both environments and standaloneHome"
     else if !builtins.isList environments || !builtins.all builtins.isString environments then
@@ -181,12 +148,9 @@ let
         definition ? nixos
         || definition ? home
         || definition ? persistence
-        || imports.nixos != [ ]
-        || imports.integratedHome != [ ]
-        || imports.standaloneHome != [ ]
       )
     then
-      throw "qnix-sdk: option-only feature '${name}' cannot contain implementations, persistence, or imports"
+      throw "qnix-sdk: option-only feature '${name}' cannot contain implementations or persistence"
     else if builtins.elem "nixos" environments && !hasNixos && !optionsOnly then
       throw "qnix-sdk: feature '${name}' supports 'nixos' but has no NixOS implementation"
     else if builtins.elem "integrated-home" environments && !hasIntegratedHome && !optionsOnly then
@@ -244,21 +208,18 @@ in
     {
       features,
       profiles ? null,
-      integrations ? { },
     }:
     let
-      repositoryArgs = { inherit integrations; };
       featureEntries = discoverNixFiles features;
       rawFeatures = builtins.mapAttrs (
-        _: entry: loadDefinition "feature" entry repositoryArgs
+        _: entry: loadDefinition "feature" entry
       ) featureEntries;
 
       featureDescriptors = builtins.mapAttrs (
         name: definition:
         let
           entry = featureEntries.${name};
-          imports = normalizeImports name (definition.imports or { });
-          environments = normalizeEnvironments name definition imports;
+          environments = normalizeEnvironments name definition;
           optionsOnly = definition.optionsOnly or false;
           declaredRequires = normalizeRequires name (definition.requires or { });
           stringRequires = declaredRequires // {
@@ -364,21 +325,13 @@ in
             (if optionsOnly then [ ] else [ enableOptionModule ])
             ++ (if definition ? options then [ relativeOptionsModule ] else [ ]);
           nixosModules =
-            imports.nixos
-            ++ (
-              if definition ? nixos || definition ? persistence then
-                [ (implementationModule "nixos" (definition.nixos or null)) ]
-              else
-                [ ]
-            );
+            if definition ? nixos || definition ? persistence then
+              [ (implementationModule "nixos" (definition.nixos or null)) ]
+            else
+              [ ];
           homeModuleFor =
             environment:
-            let
-              upstream =
-                if environment == "integrated-home" then imports.integratedHome else imports.standaloneHome;
-            in
-            upstream
-            ++ (if definition ? home then [ (implementationModule environment definition.home) ] else [ ]);
+            if definition ? home then [ (implementationModule environment definition.home) ] else [ ];
         in
         {
           __qnixType = "feature";
@@ -405,7 +358,7 @@ in
             ) stringRequires.home;
           };
           homeModules =
-            if definition ? home || imports.integratedHome != [ ] || imports.standaloneHome != [ ] then
+            if definition ? home then
               # The renderer chooses the environment-specific wrapper below.
               [ true ]
             else
@@ -448,7 +401,7 @@ in
 
       profileEntries = if profiles == null then { } else discoverNixFiles profiles;
       rawProfiles = builtins.mapAttrs (
-        _: entry: loadDefinition "profile" entry repositoryArgs
+        _: entry: loadDefinition "profile" entry
       ) profileEntries;
 
       profileDescriptorsFor =

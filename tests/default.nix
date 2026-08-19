@@ -93,10 +93,6 @@ let
         type = lib.types.bool;
         default = false;
       };
-      integrationLoaded = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-      };
       statefulHomeLoaded = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -104,14 +100,9 @@ let
     };
   };
 
-  testIntegrationModule = {
-    config.test.integrationLoaded = true;
-  };
-
   repository = sdk.mkRepository {
     features = ./repository/features;
     profiles = ./repository/profiles;
-    integrations.testModule = testIntegrationModule;
   };
 
   repositoryNixos = lib.evalModules {
@@ -236,8 +227,6 @@ let
       "persist"
       "enable"
     ] repositoryNixos.options;
-    repositoryIntegrationLoaded = repositoryNixos.config.test.integrationLoaded;
-    disabledIntegrationLoaded = disabledRepositoryNixos.config.test.integrationLoaded;
     integratedPortalLoaded = repositoryIntegratedHome.config.test.portalLoaded;
     statefulHomeLoaded = repositoryStandaloneHome.config.test.statefulHomeLoaded;
     disabledImplementationValue = disabledRepositoryNixos.config.test.nixosVolume;
@@ -298,8 +287,6 @@ assert result.repositoryPersistence == [ "/var/lib/sound" ];
 assert result.repositoryUserPersistence == [ ".local/share/stateful" ];
 assert result.disabledPersistence == [ ];
 assert !result.persistHasEnable;
-assert result.repositoryIntegrationLoaded;
-assert result.disabledIntegrationLoaded;
 assert result.integratedPortalLoaded;
 assert result.statefulHomeLoaded;
 assert result.disabledImplementationValue == 0;
