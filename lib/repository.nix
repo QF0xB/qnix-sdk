@@ -6,6 +6,16 @@ let
     "standalone-home"
   ];
 
+  recursiveUpdate = left: right:
+    left
+    // builtins.mapAttrs (
+      name: value:
+      if builtins.hasAttr name left && builtins.isAttrs left.${name} && builtins.isAttrs value then
+        recursiveUpdate left.${name} value
+      else
+        value
+    ) right;
+
   hasPrefix =
     prefix: value:
     builtins.stringLength value >= builtins.stringLength prefix
@@ -437,11 +447,15 @@ in
                     (environmentDefaults.shared or { })
                     (environmentDefaults.home or { })
                   ]);
-              defaultModules = builtins.map (
-                values:
-                { lib, ... }:
-                sdk.mkQnixConfig lib (lib.mapAttrsRecursive (_: value: lib.mkDefault value) values)
-              ) (builtins.filter (values: values != { }) defaultValues);
+              mergedDefaults = builtins.foldl' recursiveUpdate { } defaultValues;
+              defaultModules =
+                if mergedDefaults == { } then
+                  [ ]
+                else
+                  [
+                    ({ lib, ... }:
+                      sdk.mkQnixConfig lib (lib.mapAttrsRecursive (_: value: lib.mkDefault value) mergedDefaults))
+                  ];
             in
             sdk.mkProfile {
               inherit name defaultModules;
