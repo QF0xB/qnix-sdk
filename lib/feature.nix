@@ -10,9 +10,17 @@ let
     feature:
     if !builtins.isString feature.name || feature.name == "" then
       throw "qnix-sdk: a feature requires a non-empty name"
-    else if feature.optionPath == [ ] || !builtins.all builtins.isString feature.optionPath then
+    else if
+      !builtins.isList feature.optionPath
+      || feature.optionPath == [ ]
+      || !builtins.all (part: builtins.isString part && part != "") feature.optionPath
+    then
       throw "qnix-sdk: feature '${feature.name}' requires a non-empty string optionPath"
-    else if feature.supportedEnvironments == [ ] then
+    else if
+      !builtins.isList feature.supportedEnvironments
+      || feature.supportedEnvironments == [ ]
+      || !builtins.all builtins.isString feature.supportedEnvironments
+    then
       throw "qnix-sdk: feature '${feature.name}' requires at least one supported environment"
     else if
       !builtins.all (
