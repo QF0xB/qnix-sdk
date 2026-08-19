@@ -246,6 +246,14 @@ qnix.modulesFor.integratedHome [ "desktop" ]
 qnix.modulesFor.standaloneHome [ "desktop" ]
 ```
 
+For an explicit validation pass over a selected closure, use the repository
+validator. It resolves the requested profiles and environment without
+evaluating the complete NixOS or Home Manager module system:
+
+```nix
+qnix.validate "nixos" [ "desktop" ]
+```
+
 Or reuse a selection:
 
 ```nix

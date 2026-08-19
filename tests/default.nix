@@ -122,6 +122,10 @@ let
     modules = [ testOptionsModule ] ++ repository.modulesFor.nixos [ "direct-home-default" ];
   };
 
+  repositoryEnvironmentDefault = lib.evalModules {
+    modules = [ testOptionsModule ] ++ repository.modulesFor.nixos [ "environment-default" ];
+  };
+
   disabledRepositoryNixos = lib.evalModules {
     modules = [
       testOptionsModule
@@ -153,6 +157,23 @@ let
       requires.hmoe = [ ];
     }).requires
   );
+
+  invalidOptionPath = builtins.tryEval (
+    (sdk.mkFeature {
+      name = "invalid-option-path";
+      optionPath = [ "invalid" "" ];
+      supportedEnvironments = [ "nixos" ];
+    }).optionPath
+  );
+
+  invalidProfile = builtins.tryEval (
+    (sdk.mkProfile {
+      name = "invalid-profile";
+      imports = "base";
+    }).name
+  );
+
+  invalidSelection = builtins.tryEval (sdk.composeProfiles "desktop");
 
   standaloneDependency = sdk.mkFeature {
     name = "standalone-dependency";
@@ -197,6 +218,8 @@ let
     }).modulesFor.nixos [ "invalid" ])
   );
 
+  invalidValidationEnvironment = builtins.tryEval (repository.validate "invalid" [ "integrated" ]);
+
   result = {
     defaultNamespace = defaultSdk.namespace;
     customNamespace = sdk.namespace;
@@ -205,6 +228,9 @@ let
     enableDefault = evaluated.config.custom.qnix.desktop.test.enable;
     sdkContext = sdk.context;
     invalidRequiresRejected = !invalidRequires.success;
+    invalidOptionPathRejected = !invalidOptionPath.success;
+    invalidProfileRejected = !invalidProfile.success;
+    invalidSelectionRejected = !invalidSelection.success;
     incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
     dottedPathRejected = !dottedPathRejected.success;
     invalidImportsRejected = !invalidImportsRejected.success;
@@ -216,6 +242,7 @@ let
     repositoryHomeVolume = repositoryIntegratedHome.config.test.homeVolume;
     repositoryStandaloneVolume = repositoryStandaloneHome.config.test.homeVolume;
     repositoryDirectHomeDefault = repositoryDirectHomeDefault.config.custom.qnix.home.value;
+    repositoryEnvironmentDefault = repositoryEnvironmentDefault.config.custom.qnix.home.value;
     repositoryDependency = repositoryIntegratedHome.config.test.dependencyLabel;
     repositoryLaptopContext = repositoryNixos.config.test.isLaptop;
     repositoryPersistence = repositoryNixos.config.custom.qnix.persist.root.directories;
@@ -232,6 +259,7 @@ let
     disabledImplementationValue = disabledRepositoryNixos.config.test.nixosVolume;
     unsupportedStandaloneRejected = !unsupportedStandalone.success;
     unsupportedIntegratedRejected = !unsupportedIntegrated.success;
+    invalidValidationEnvironmentRejected = !invalidValidationEnvironment.success;
   };
 in
 assert result.defaultNamespace == [ "qnix" ];
@@ -257,6 +285,9 @@ assert result.sdkContext == {
   location = "test-lab";
 };
 assert result.invalidRequiresRejected;
+assert result.invalidOptionPathRejected;
+assert result.invalidProfileRejected;
+assert result.invalidSelectionRejected;
 assert result.incompatibleHomeDependencyRejected;
 assert result.dottedPathRejected;
 assert result.invalidImportsRejected;
@@ -281,6 +312,7 @@ assert result.repositoryNixosVolume == 11;
 assert result.repositoryHomeVolume == 11;
 assert result.repositoryStandaloneVolume == 11;
 assert result.repositoryDirectHomeDefault == 42;
+assert result.repositoryEnvironmentDefault == 9;
 assert result.repositoryDependency == "dependency";
 assert result.repositoryLaptopContext;
 assert result.repositoryPersistence == [ "/var/lib/sound" ];
@@ -292,4 +324,5 @@ assert result.statefulHomeLoaded;
 assert result.disabledImplementationValue == 0;
 assert result.unsupportedStandaloneRejected;
 assert result.unsupportedIntegratedRejected;
+assert result.invalidValidationEnvironmentRejected;
 result
