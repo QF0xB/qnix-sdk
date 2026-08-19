@@ -488,6 +488,21 @@ in
         standaloneHome = names: sdk.modulesFor.standaloneHome (selectionFor "standalone-home" names);
       };
 
+      validate =
+        environment: names:
+        let
+          modules =
+            if environment == "nixos" then
+              modulesForNames.nixos names
+            else if environment == "integrated-home" then
+              modulesForNames.integratedHome names
+            else if environment == "standalone-home" then
+              modulesForNames.standaloneHome names
+            else
+              throw "qnix-sdk: unsupported validation environment '${environment}'";
+        in
+        builtins.deepSeq modules true;
+
       select = names: {
         inherit names;
         nixosModules = modulesForNames.nixos names;
@@ -499,7 +514,7 @@ in
       };
     in
     {
-      inherit select;
+      inherit select validate;
       features = featureDescriptors;
       profileNames = builtins.attrNames rawProfiles;
       featureNames = builtins.attrNames rawFeatures;
