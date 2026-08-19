@@ -126,6 +126,16 @@ let
     modules = [ testOptionsModule ] ++ repository.modulesFor.nixos [ "environment-default" ];
   };
 
+  repositoryEnvironmentDefaultOverride = lib.evalModules {
+    modules = [
+      testOptionsModule
+      {
+        custom.qnix.home.value = 13;
+      }
+    ]
+    ++ repository.modulesFor.nixos [ "environment-default" ];
+  };
+
   disabledRepositoryNixos = lib.evalModules {
     modules = [
       testOptionsModule
@@ -251,6 +261,7 @@ let
     repositoryStandaloneVolume = repositoryStandaloneHome.config.test.homeVolume;
     repositoryDirectHomeDefault = repositoryDirectHomeDefault.config.custom.qnix.home.value;
     repositoryEnvironmentDefault = repositoryEnvironmentDefault.config.custom.qnix.home.value;
+    repositoryEnvironmentDefaultOverride = repositoryEnvironmentDefaultOverride.config.custom.qnix.home.value;
     repositoryDependency = repositoryIntegratedHome.config.test.dependencyLabel;
     repositoryLaptopContext = repositoryNixos.config.test.isLaptop;
     repositoryPersistence = repositoryNixos.config.custom.qnix.persist.root.directories;
@@ -322,6 +333,7 @@ assert result.repositoryHomeVolume == 11;
 assert result.repositoryStandaloneVolume == 11;
 assert result.repositoryDirectHomeDefault == 42;
 assert result.repositoryEnvironmentDefault == 9;
+assert result.repositoryEnvironmentDefaultOverride == 13;
 assert result.repositoryDependency == "dependency";
 assert result.repositoryLaptopContext;
 assert result.repositoryPersistence == [ "/var/lib/sound" ];

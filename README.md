@@ -237,6 +237,9 @@ defaults = {
 ```
 
 Default leaf values are automatically wrapped with `lib.mkDefault`.
+Profile defaults are recommendations only: client configuration can override
+them with an ordinary option definition, or use `lib.mkForce` when necessary.
+The repository API guarantees this behavior for values under `defaults`.
 
 Render profile names directly:
 
@@ -290,6 +293,10 @@ fully explicit construction.
   Manager implementations.
 - `getQnixConfig` reads the configured namespace from `osConfig` when
   integrated and `config` when standalone.
+
+The recommended repository API treats profile `defaults` as defaults only. The
+lower-level `mkProfile` API also accepts arbitrary `defaultModules` for
+advanced use; those modules are outside the repository defaults guarantee.
 
 Only profiles reachable from `composeProfiles` and their feature requirements
 are traversed. Features outside the selected closure are not imported.
