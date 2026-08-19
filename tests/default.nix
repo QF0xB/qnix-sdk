@@ -62,6 +62,19 @@ let
     modules = sdk.modulesFor.nixos selection;
   };
 
+  evaluatedSystemProperties = lib.evalModules {
+    modules = [
+      {
+        custom.qnix = {
+          headless = true;
+          iso = true;
+          vm = true;
+          laptop = true;
+        };
+      }
+    ] ++ sdk.modulesFor.nixos selection;
+  };
+
   testOptionsModule = {
     options.test = {
       dependencyLabel = lib.mkOption {
@@ -212,6 +225,15 @@ let
     homeClosure = builtins.map (feature: feature.name) homeResolved.features;
     enableDefault = evaluated.config.custom.qnix.desktop.test.enable;
     laptopDefault = evaluated.config.custom.qnix.context.laptop;
+    directSystemProperties = {
+      inherit (evaluatedSystemProperties.config.custom.qnix)
+        headless
+        iso
+        vm
+        laptop
+        ;
+      context = evaluatedSystemProperties.config.custom.qnix.context;
+    };
     invalidRequiresRejected = !invalidRequires.success;
     incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
     dottedPathRejected = !dottedPathRejected.success;
@@ -263,6 +285,18 @@ assert
   ];
 assert result.enableDefault;
 assert result.laptopDefault;
+assert result.directSystemProperties == {
+  headless = true;
+  iso = true;
+  vm = true;
+  laptop = true;
+  context = {
+    headless = true;
+    iso = true;
+    vm = true;
+    laptop = true;
+  };
+};
 assert result.invalidRequiresRejected;
 assert result.incompatibleHomeDependencyRejected;
 assert result.dottedPathRejected;

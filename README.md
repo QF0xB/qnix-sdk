@@ -60,6 +60,21 @@ module arguments such as `lib`, `pkgs`, `config`, and `options` remain
 available. An implementation can set `autoEnable = false` or provide a custom
 `when = args: ...` predicate when the generated enable guard is not suitable.
 
+### System properties
+
+The SDK provides boolean system properties directly below the namespace:
+
+```nix
+qnix.headless = true;
+qnix.iso = false;
+qnix.vm = true;
+qnix.laptop = false;
+```
+
+They are also available to implementations through the injected `context`
+argument, for example `context.headless`. The previous
+`qnix.context.<property>` paths remain aliases for compatibility.
+
 Use `optionsOnly = true` for a schema feature that has no implementation and
 must not have an enable option:
 
