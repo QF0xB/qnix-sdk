@@ -78,36 +78,37 @@ let
 
   normalizeImports =
     name: imports:
-    let
-      keys = builtins.attrNames imports;
-    in
     if !builtins.isAttrs imports then
       throw "qnix-sdk: feature '${name}' imports must be an attribute set"
-    else if
-      builtins.any (
-        key:
-        !builtins.elem key [
-          "nixos"
-          "integratedHome"
-          "standaloneHome"
-        ]
-      ) keys
-    then
-      throw "qnix-sdk: feature '${name}' imports only supports 'nixos', 'integratedHome', and 'standaloneHome'"
-    else if
-      !builtins.all builtins.isList [
-        (imports.nixos or [ ])
-        (imports.integratedHome or [ ])
-        (imports.standaloneHome or [ ])
-      ]
-    then
-      throw "qnix-sdk: feature '${name}' import groups must be lists"
     else
-      {
-        nixos = imports.nixos or [ ];
-        integratedHome = imports.integratedHome or [ ];
-        standaloneHome = imports.standaloneHome or [ ];
-      };
+      let
+        keys = builtins.attrNames imports;
+      in
+      if
+        builtins.any (
+          key:
+          !builtins.elem key [
+            "nixos"
+            "integratedHome"
+            "standaloneHome"
+          ]
+        ) keys
+      then
+        throw "qnix-sdk: feature '${name}' imports only supports 'nixos', 'integratedHome', and 'standaloneHome'"
+      else if
+        !builtins.all builtins.isList [
+          (imports.nixos or [ ])
+          (imports.integratedHome or [ ])
+          (imports.standaloneHome or [ ])
+        ]
+      then
+        throw "qnix-sdk: feature '${name}' import groups must be lists"
+      else
+        {
+          nixos = imports.nixos or [ ];
+          integratedHome = imports.integratedHome or [ ];
+          standaloneHome = imports.standaloneHome or [ ];
+        };
 
   evalSpec =
     description: spec: args:
@@ -199,41 +200,44 @@ let
     name: value:
     let
       normalized = if builtins.isList value then { shared = value; } else value;
-      keys = builtins.attrNames normalized;
     in
     if !builtins.isAttrs normalized then
       throw "qnix-sdk: profile '${name}' features must be a list or attribute set"
-    else if
-      builtins.any (
-        key:
-        !builtins.elem key [
-          "shared"
-          "nixos"
-          "home"
-        ]
-      ) keys
-    then
-      throw "qnix-sdk: profile '${name}' features only supports 'shared', 'nixos', and 'home'"
-    else if
-      !builtins.all builtins.isList [
-        (normalized.shared or [ ])
-        (normalized.nixos or [ ])
-        (normalized.home or [ ])
-      ]
-    then
-      throw "qnix-sdk: profile '${name}' feature groups must be lists"
-    else if
-      !builtins.all builtins.isString (
-        (normalized.shared or [ ]) ++ (normalized.nixos or [ ]) ++ (normalized.home or [ ])
-      )
-    then
-      throw "qnix-sdk: profile '${name}' features must be feature-name strings"
     else
-      {
-        shared = normalized.shared or [ ];
-        nixos = normalized.nixos or [ ];
-        home = normalized.home or [ ];
-      };
+      let
+        keys = builtins.attrNames normalized;
+      in
+      if
+        builtins.any (
+          key:
+          !builtins.elem key [
+            "shared"
+            "nixos"
+            "home"
+          ]
+        ) keys
+      then
+        throw "qnix-sdk: profile '${name}' features only supports 'shared', 'nixos', and 'home'"
+      else if
+        !builtins.all builtins.isList [
+          (normalized.shared or [ ])
+          (normalized.nixos or [ ])
+          (normalized.home or [ ])
+        ]
+      then
+        throw "qnix-sdk: profile '${name}' feature groups must be lists"
+      else if
+        !builtins.all builtins.isString (
+          (normalized.shared or [ ]) ++ (normalized.nixos or [ ]) ++ (normalized.home or [ ])
+        )
+      then
+        throw "qnix-sdk: profile '${name}' features must be feature-name strings"
+      else
+        {
+          shared = normalized.shared or [ ];
+          nixos = normalized.nixos or [ ];
+          home = normalized.home or [ ];
+        };
 in
 {
   mkRepository =

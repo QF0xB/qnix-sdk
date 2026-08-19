@@ -183,6 +183,19 @@ let
     }).featureNames
   );
 
+  invalidImportsRejected = builtins.tryEval (
+    (sdk.mkRepository {
+      features = ./invalid-imports-repository/features;
+    }).features.invalid.supportedEnvironments
+  );
+
+  invalidProfileFeaturesRejected = builtins.tryEval (
+    builtins.length ((sdk.mkRepository {
+      features = ./invalid-profile-repository/features;
+      profiles = ./invalid-profile-repository/profiles;
+    }).modulesFor.nixos [ "invalid" ])
+  );
+
   result = {
     defaultNamespace = defaultSdk.namespace;
     customNamespace = sdk.namespace;
@@ -193,6 +206,8 @@ let
     invalidRequiresRejected = !invalidRequires.success;
     incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
     dottedPathRejected = !dottedPathRejected.success;
+    invalidImportsRejected = !invalidImportsRejected.success;
+    invalidProfileFeaturesRejected = !invalidProfileFeaturesRejected.success;
     helperConfig = sdk.mkQnixConfig lib { marker = true; };
     repositoryFeatureNames = repository.featureNames;
     inferredEnvironments = repository.features."system.inferred".supportedEnvironments;
@@ -241,6 +256,8 @@ assert result.laptopDefault;
 assert result.invalidRequiresRejected;
 assert result.incompatibleHomeDependencyRejected;
 assert result.dottedPathRejected;
+assert result.invalidImportsRejected;
+assert result.invalidProfileFeaturesRejected;
 assert result.helperConfig.custom.qnix.marker;
 assert
   result.repositoryFeatureNames == [
