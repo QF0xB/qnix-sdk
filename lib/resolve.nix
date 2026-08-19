@@ -53,7 +53,26 @@ let
 
   requirementsFor =
     mode: feature:
-    if mode == "nixos" then feature.requires.nixos ++ feature.requires.home else feature.requires.home;
+    let
+      requireSupport = environment: dependency:
+        if builtins.elem environment dependency.supportedEnvironments then
+          dependency
+        else
+          throw "qnix-sdk: feature '${feature.name}' requires '${dependency.name}' for '${environment}', but it does not support that environment";
+      nixosRequirements =
+        if mode == "nixos" then
+          builtins.map (requireSupport "nixos") feature.requires.nixos
+        else
+          [ ];
+      homeRequirements =
+        if mode == "nixos" then
+          # NixOS owns the canonical Home option schema, even when the Home
+          # implementation itself is rendered separately.
+          feature.requires.home
+        else
+          builtins.map (requireSupport mode) feature.requires.home;
+    in
+    nixosRequirements ++ homeRequirements;
 
   visitFeature =
     mode: state: stack: rawFeature:

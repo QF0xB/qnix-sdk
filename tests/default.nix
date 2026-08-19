@@ -149,6 +149,30 @@ let
     }).requires
   );
 
+  standaloneDependency = sdk.mkFeature {
+    name = "standalone-dependency";
+    optionPath = [ "standalone-dependency" ];
+    supportedEnvironments = [ "standalone-home" ];
+    homeModules = [ ({ ... }: { }) ];
+  };
+
+  integratedDependent = sdk.mkFeature {
+    name = "integrated-dependent";
+    optionPath = [ "integrated-dependent" ];
+    supportedEnvironments = [ "integrated-home" ];
+    requires.home = [ standaloneDependency ];
+    homeModules = [ ({ ... }: { }) ];
+  };
+
+  incompatibleHomeDependency = builtins.tryEval (
+    builtins.length (sdk.modulesFor.integratedHome (sdk.composeProfiles [
+      (sdk.mkProfile {
+        name = "incompatible-home-dependency";
+        features = [ integratedDependent ];
+      })
+    ]))
+  );
+
   result = {
     defaultNamespace = defaultSdk.namespace;
     customNamespace = sdk.namespace;
@@ -157,6 +181,7 @@ let
     enableDefault = evaluated.config.custom.qnix.desktop.test.enable;
     laptopDefault = evaluated.config.custom.qnix.context.laptop;
     invalidRequiresRejected = !invalidRequires.success;
+    incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
     helperConfig = sdk.mkQnixConfig lib { marker = true; };
     repositoryFeatureNames = repository.featureNames;
     inferredEnvironments = repository.features."system.inferred".supportedEnvironments;
@@ -202,6 +227,7 @@ assert
 assert result.enableDefault;
 assert result.laptopDefault;
 assert result.invalidRequiresRejected;
+assert result.incompatibleHomeDependencyRejected;
 assert result.helperConfig.custom.qnix.marker;
 assert
   result.repositoryFeatureNames == [
