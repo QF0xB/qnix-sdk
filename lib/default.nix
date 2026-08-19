@@ -16,31 +16,35 @@ let
   mkSdk =
     {
       namespace ? "qnix",
+      context ? { },
     }:
     let
       normalizedNamespace = normalizeNamespace namespace;
-      contextModule = import ../modules/context.nix { namespace = normalizedNamespace; };
+      normalizedContext =
+        if builtins.isAttrs context then
+          context
+        else
+          throw "qnix-sdk: context must be an attribute set";
       featureLib = import ./feature.nix { namespace = normalizedNamespace; };
       profileLib = import ./profile.nix;
       resolveLib = import ./resolve.nix;
       configLib = import ./config.nix { namespace = normalizedNamespace; };
       renderLib = import ./render.nix {
-        inherit contextModule;
         inherit (resolveLib) resolveSelection;
       };
       repositoryLib = import ./repository.nix { sdk = instance; };
       instance = {
         namespace = normalizedNamespace;
-        inherit contextModule;
+        context = normalizedContext;
         inherit (featureLib) mkFeature;
         inherit (profileLib) mkProfile composeProfiles;
         inherit (configLib)
           getQnixConfig
           getFeatureConfig
-          isGraphical
           mkQnixConfig
           setQnixOption
           ;
+        isGraphical = !(normalizedContext.headless or false);
         inherit (resolveLib) resolveSelection;
         inherit (renderLib) modulesFor;
         inherit (repositoryLib) mkRepository;

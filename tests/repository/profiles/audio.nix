@@ -5,7 +5,6 @@
   ];
 
   defaults = {
-    context.laptop = true;
     desktop.sound.volumeStep = 11;
   };
 }

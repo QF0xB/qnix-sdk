@@ -31,5 +31,4 @@ in
     lib: optionPath: value:
     lib.setAttrByPath (namespace ++ optionPath) value;
 
-  isGraphical = qcfg: !qcfg.context.headless;
 }

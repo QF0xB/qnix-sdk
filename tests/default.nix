@@ -6,6 +6,10 @@ let
       "custom"
       "qnix"
     ];
+    context = {
+      laptop = true;
+      location = "test-lab";
+    };
   };
 
   polkit = sdk.mkFeature {
@@ -50,9 +54,6 @@ let
   profile = sdk.mkProfile {
     name = "desktop";
     features = [ desktop ];
-    defaultModules = [
-      ({ lib, ... }: sdk.setQnixOption lib [ "context" "laptop" ] true)
-    ];
   };
 
   selection = sdk.composeProfiles [ profile ];
@@ -60,19 +61,6 @@ let
   homeResolved = sdk.resolveSelection "integrated-home" selection;
   evaluated = lib.evalModules {
     modules = sdk.modulesFor.nixos selection;
-  };
-
-  evaluatedSystemProperties = lib.evalModules {
-    modules = [
-      {
-        custom.qnix = {
-          headless = true;
-          iso = true;
-          vm = true;
-          laptop = true;
-        };
-      }
-    ] ++ sdk.modulesFor.nixos selection;
   };
 
   testOptionsModule = {
@@ -224,16 +212,7 @@ let
     nixosClosure = builtins.map (feature: feature.name) nixosResolved.features;
     homeClosure = builtins.map (feature: feature.name) homeResolved.features;
     enableDefault = evaluated.config.custom.qnix.desktop.test.enable;
-    laptopDefault = evaluated.config.custom.qnix.context.laptop;
-    directSystemProperties = {
-      inherit (evaluatedSystemProperties.config.custom.qnix)
-        headless
-        iso
-        vm
-        laptop
-        ;
-      context = evaluatedSystemProperties.config.custom.qnix.context;
-    };
+    sdkContext = sdk.context;
     invalidRequiresRejected = !invalidRequires.success;
     incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
     dottedPathRejected = !dottedPathRejected.success;
@@ -284,18 +263,9 @@ assert
     "desktop"
   ];
 assert result.enableDefault;
-assert result.laptopDefault;
-assert result.directSystemProperties == {
-  headless = true;
-  iso = true;
-  vm = true;
+assert result.sdkContext == {
   laptop = true;
-  context = {
-    headless = true;
-    iso = true;
-    vm = true;
-    laptop = true;
-  };
+  location = "test-lab";
 };
 assert result.invalidRequiresRejected;
 assert result.incompatibleHomeDependencyRejected;

@@ -8,7 +8,5 @@
     in
     {
       lib = sdk;
-      nixosModules.context = sdk.contextModule;
-      homeManagerModules.context = sdk.contextModule;
     };
 }

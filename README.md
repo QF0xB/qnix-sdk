@@ -60,20 +60,26 @@ module arguments such as `lib`, `pkgs`, `config`, and `options` remain
 available. An implementation can set `autoEnable = false` or provide a custom
 `when = args: ...` predicate when the generated enable guard is not suitable.
 
-### System properties
+### Instance context
 
-The SDK provides boolean system properties directly below the namespace:
+`mkSdk` accepts an arbitrary context attribute set. It is fixed for that SDK
+instance and is injected into every feature implementation:
 
 ```nix
-qnix.headless = true;
-qnix.iso = false;
-qnix.vm = true;
-qnix.laptop = false;
+sdk = inputs.qnix-sdk.lib.mkSdk {
+  context = {
+    headless = true;
+    iso = false;
+    vm = true;
+    laptop = false;
+    location = "lab";
+  };
+};
 ```
 
-They are also available to implementations through the injected `context`
-argument, for example `context.headless`. The previous
-`qnix.context.<property>` paths remain aliases for compatibility.
+Implementations receive this value as `context`, for example
+`context.headless` or `context.location`. Context is not a NixOS or Home
+Manager option, so hosts cannot override it through module configuration.
 
 Use `optionsOnly = true` for a schema feature that has no implementation and
 must not have an enable option:
@@ -216,7 +222,6 @@ A profile file contains feature names and optional profile imports and defaults:
   ];
 
   defaults = {
-    context.headless = false;
     desktop.sound.volumeStep = 5;
   };
 }
@@ -241,7 +246,6 @@ defaults = {
   home.theme = "dark";
 
   __qnixEnvironment = {
-    shared.context.headless = false;
     nixos.system.bootMode = "uefi";
     home.desktop.terminal.fontSize = 12;
   };
@@ -300,8 +304,8 @@ are traversed. Features outside the selected closure are not imported.
 
 Only selected features are imported, so every feature enable option defaults to
 `true`. Host configuration can override it normally. Context conditions such as
-`<namespace>.context.headless` are independent implementation guards and do
-not change the meaning of `enable`.
+`context.headless` are independent implementation guards and do not change the
+meaning of `enable`.
 
 ## Requirements
 
@@ -324,6 +328,9 @@ Create an SDK instance to use another top-level or nested namespace:
 ```nix
 sdk = inputs.qnix-sdk.lib.mkSdk {
   namespace = [ "company" "workstation" ];
+  context = {
+    laptop = true;
+  };
 };
 ```
 

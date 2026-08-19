@@ -1,5 +1,4 @@
 {
-  contextModule,
   resolveSelection,
 }:
 let
@@ -11,8 +10,7 @@ let
 
   commonOwnerModules =
     resolved:
-    [ contextModule ]
-    ++ concatFeatureModules "optionModules" resolved.features
+    concatFeatureModules "optionModules" resolved.features
     ++ resolved.defaultModules;
 
   unsupportedStandalone =

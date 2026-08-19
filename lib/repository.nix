@@ -325,7 +325,7 @@ in
               featureArgs = args // {
                 inherit cfg qnix;
                 qcfg = qnix;
-                context = qnix.context or { };
+                context = sdk.context;
               };
               implementationBody =
                 if spec == null then
