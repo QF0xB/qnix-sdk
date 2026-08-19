@@ -5,8 +5,15 @@ let
       throw "qnix-sdk: a profile requires a non-empty name"
     else if !builtins.isList profile.imports then
       throw "qnix-sdk: profile '${profile.name}' imports must be a list"
-    else if !builtins.all builtins.isString profile.imports then
-      throw "qnix-sdk: profile '${profile.name}' imports must contain profile-name strings"
+    else if
+      !builtins.all (
+        imported:
+        builtins.isAttrs imported
+        && imported ? __qnixType
+        && imported.__qnixType == "profile"
+      ) profile.imports
+    then
+      throw "qnix-sdk: profile '${profile.name}' imports must contain profile descriptors"
     else if !builtins.isList profile.features then
       throw "qnix-sdk: profile '${profile.name}' features must be a list"
     else if !builtins.isList profile.defaultModules then

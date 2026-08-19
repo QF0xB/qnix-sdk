@@ -173,6 +173,13 @@ let
     }).name
   );
 
+  validProfileImport = builtins.tryEval (
+    (sdk.mkProfile {
+      name = "valid-profile-import";
+      imports = [ profile ];
+    }).name
+  );
+
   invalidSelection = builtins.tryEval (sdk.composeProfiles "desktop");
 
   standaloneDependency = sdk.mkFeature {
@@ -230,6 +237,7 @@ let
     invalidRequiresRejected = !invalidRequires.success;
     invalidOptionPathRejected = !invalidOptionPath.success;
     invalidProfileRejected = !invalidProfile.success;
+    validProfileImportAccepted = validProfileImport.success;
     invalidSelectionRejected = !invalidSelection.success;
     incompatibleHomeDependencyRejected = !incompatibleHomeDependency.success;
     dottedPathRejected = !dottedPathRejected.success;
@@ -287,6 +295,7 @@ assert result.sdkContext == {
 assert result.invalidRequiresRejected;
 assert result.invalidOptionPathRejected;
 assert result.invalidProfileRejected;
+assert result.validProfileImportAccepted;
 assert result.invalidSelectionRejected;
 assert result.incompatibleHomeDependencyRejected;
 assert result.dottedPathRejected;
