@@ -126,6 +126,10 @@ let
     modules = [ testOptionsModule ] ++ repository.modulesFor.standaloneHome [ "audio" ];
   };
 
+  repositoryDirectHomeDefault = lib.evalModules {
+    modules = [ testOptionsModule ] ++ repository.modulesFor.nixos [ "direct-home-default" ];
+  };
+
   disabledRepositoryNixos = lib.evalModules {
     modules = [
       testOptionsModule
@@ -188,6 +192,7 @@ let
     repositoryNixosVolume = repositoryNixos.config.test.nixosVolume;
     repositoryHomeVolume = repositoryIntegratedHome.config.test.homeVolume;
     repositoryStandaloneVolume = repositoryStandaloneHome.config.test.homeVolume;
+    repositoryDirectHomeDefault = repositoryDirectHomeDefault.config.custom.qnix.home.value;
     repositoryDependency = repositoryIntegratedHome.config.test.dependencyLabel;
     repositoryLaptopContext = repositoryNixos.config.test.isLaptop;
     repositoryPersistence = repositoryNixos.config.custom.qnix.persist.root.directories;
@@ -235,6 +240,7 @@ assert
     "base.marker"
     "desktop.portal"
     "desktop.sound"
+    "home"
     "persist"
     "system.inferred"
   ];
@@ -246,6 +252,7 @@ assert
 assert result.repositoryNixosVolume == 11;
 assert result.repositoryHomeVolume == 11;
 assert result.repositoryStandaloneVolume == 11;
+assert result.repositoryDirectHomeDefault == 42;
 assert result.repositoryDependency == "dependency";
 assert result.repositoryLaptopContext;
 assert result.repositoryPersistence == [ "/var/lib/sound" ];

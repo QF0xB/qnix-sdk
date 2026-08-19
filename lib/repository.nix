@@ -457,30 +457,21 @@ in
                 environmentFeatures.${featureName}
                   or (throw "qnix-sdk: profile '${name}' references unknown feature '${featureName}'");
               defaults = definition.defaults or { };
-              groupedDefaults =
-                builtins.isAttrs defaults
-                && builtins.any (
-                  key:
-                  builtins.elem key [
-                    "shared"
-                    "nixos"
-                    "home"
-                  ]
-                ) (builtins.attrNames defaults);
+              environmentDefaults = defaults.__qnixEnvironment or { };
+              directDefaults = builtins.removeAttrs defaults [ "__qnixEnvironment" ];
               defaultValues =
-                if !groupedDefaults then
-                  [ defaults ]
-                else if environment == "nixos" then
+                [ directDefaults ]
+                ++ (if environment == "nixos" then
                   [
-                    (defaults.shared or { })
-                    (defaults.nixos or { })
-                    (defaults.home or { })
+                    (environmentDefaults.shared or { })
+                    (environmentDefaults.nixos or { })
+                    (environmentDefaults.home or { })
                   ]
                 else
                   [
-                    (defaults.shared or { })
-                    (defaults.home or { })
-                  ];
+                    (environmentDefaults.shared or { })
+                    (environmentDefaults.home or { })
+                  ]);
               defaultModules = builtins.map (
                 values:
                 { lib, ... }:

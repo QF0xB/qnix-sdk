@@ -217,8 +217,23 @@ features = {
 };
 ```
 
-Defaults can similarly contain `shared`, `nixos`, and `home` groups. Default
-leaf values are automatically wrapped with `lib.mkDefault`.
+Environment-specific defaults live under the explicit
+`__qnixEnvironment` marker, which prevents collisions with feature names such
+as `home`:
+
+```nix
+defaults = {
+  home.theme = "dark";
+
+  __qnixEnvironment = {
+    shared.context.headless = false;
+    nixos.system.bootMode = "uefi";
+    home.desktop.terminal.fontSize = 12;
+  };
+};
+```
+
+Default leaf values are automatically wrapped with `lib.mkDefault`.
 
 Render profile names directly:
 
