@@ -28,22 +28,25 @@ let
         inherit contextModule;
         inherit (resolveLib) resolveSelection;
       };
+      repositoryLib = import ./repository.nix { sdk = instance; };
+      instance = {
+        namespace = normalizedNamespace;
+        inherit contextModule;
+        inherit (featureLib) mkFeature;
+        inherit (profileLib) mkProfile composeProfiles;
+        inherit (configLib)
+          getQnixConfig
+          getFeatureConfig
+          isGraphical
+          mkQnixConfig
+          setQnixOption
+          ;
+        inherit (resolveLib) resolveSelection;
+        inherit (renderLib) modulesFor;
+        inherit (repositoryLib) mkRepository;
+      };
     in
-    {
-      namespace = normalizedNamespace;
-      inherit contextModule;
-      inherit (featureLib) mkFeature;
-      inherit (profileLib) mkProfile composeProfiles;
-      inherit (configLib)
-        getQnixConfig
-        getFeatureConfig
-        isGraphical
-        mkQnixConfig
-        setQnixOption
-        ;
-      inherit (resolveLib) resolveSelection;
-      inherit (renderLib) modulesFor;
-    };
+    instance;
 
   defaultSdk = mkSdk { };
 in
