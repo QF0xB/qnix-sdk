@@ -81,6 +81,10 @@ let
         type = lib.types.bool;
         default = false;
       };
+      isGraphical = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+      };
       portalLoaded = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -151,12 +155,16 @@ let
   );
 
   unsupportedIntegrated = builtins.tryEval (
-    builtins.length (sdk.modulesFor.integratedHome (sdk.composeProfiles [
-      (sdk.mkProfile {
-        name = "unsupported-integrated";
-        features = [ polkit ];
-      })
-    ]))
+    builtins.length (
+      sdk.modulesFor.integratedHome (
+        sdk.composeProfiles [
+          (sdk.mkProfile {
+            name = "unsupported-integrated";
+            features = [ polkit ];
+          })
+        ]
+      )
+    )
   );
 
   invalidRequires = builtins.tryEval (
@@ -171,7 +179,10 @@ let
   invalidOptionPath = builtins.tryEval (
     (sdk.mkFeature {
       name = "invalid-option-path";
-      optionPath = [ "invalid" "" ];
+      optionPath = [
+        "invalid"
+        ""
+      ];
       supportedEnvironments = [ "nixos" ];
     }).optionPath
   );
@@ -208,12 +219,16 @@ let
   };
 
   incompatibleHomeDependency = builtins.tryEval (
-    builtins.length (sdk.modulesFor.integratedHome (sdk.composeProfiles [
-      (sdk.mkProfile {
-        name = "incompatible-home-dependency";
-        features = [ integratedDependent ];
-      })
-    ]))
+    builtins.length (
+      sdk.modulesFor.integratedHome (
+        sdk.composeProfiles [
+          (sdk.mkProfile {
+            name = "incompatible-home-dependency";
+            features = [ integratedDependent ];
+          })
+        ]
+      )
+    )
   );
 
   dottedPathRejected = builtins.tryEval (
@@ -229,10 +244,13 @@ let
   );
 
   invalidProfileFeaturesRejected = builtins.tryEval (
-    builtins.length ((sdk.mkRepository {
-      features = ./invalid-profile-repository/features;
-      profiles = ./invalid-profile-repository/profiles;
-    }).modulesFor.nixos [ "invalid" ])
+    builtins.length (
+      (sdk.mkRepository {
+        features = ./invalid-profile-repository/features;
+        profiles = ./invalid-profile-repository/profiles;
+      }).modulesFor.nixos
+        [ "invalid" ]
+    )
   );
 
   invalidValidationEnvironment = builtins.tryEval (repository.validate "invalid" [ "integrated" ]);
@@ -261,9 +279,11 @@ let
     repositoryStandaloneVolume = repositoryStandaloneHome.config.test.homeVolume;
     repositoryDirectHomeDefault = repositoryDirectHomeDefault.config.custom.qnix.home.value;
     repositoryEnvironmentDefault = repositoryEnvironmentDefault.config.custom.qnix.home.value;
-    repositoryEnvironmentDefaultOverride = repositoryEnvironmentDefaultOverride.config.custom.qnix.home.value;
+    repositoryEnvironmentDefaultOverride =
+      repositoryEnvironmentDefaultOverride.config.custom.qnix.home.value;
     repositoryDependency = repositoryIntegratedHome.config.test.dependencyLabel;
     repositoryLaptopContext = repositoryNixos.config.test.isLaptop;
+    repositoryGraphicalContext = repositoryNixos.config.test.isGraphical;
     repositoryPersistence = repositoryNixos.config.custom.qnix.persist.root.directories;
     repositoryUserPersistence = repositoryNixos.config.custom.qnix.persist.users."*".directories;
     disabledPersistence = disabledRepositoryNixos.config.custom.qnix.persist.root.directories;
@@ -299,10 +319,11 @@ assert
     "desktop"
   ];
 assert result.enableDefault;
-assert result.sdkContext == {
-  laptop = true;
-  location = "test-lab";
-};
+assert
+  result.sdkContext == {
+    laptop = true;
+    location = "test-lab";
+  };
 assert result.invalidRequiresRejected;
 assert result.invalidOptionPathRejected;
 assert result.invalidProfileRejected;
@@ -336,6 +357,7 @@ assert result.repositoryEnvironmentDefault == 9;
 assert result.repositoryEnvironmentDefaultOverride == 13;
 assert result.repositoryDependency == "dependency";
 assert result.repositoryLaptopContext;
+assert result.repositoryGraphicalContext;
 assert result.repositoryPersistence == [ "/var/lib/sound" ];
 assert result.repositoryUserPersistence == [ ".local/share/stateful" ];
 assert result.disabledPersistence == [ ];

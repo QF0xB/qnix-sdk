@@ -6,7 +6,8 @@ let
     "standalone-home"
   ];
 
-  recursiveUpdate = left: right:
+  recursiveUpdate =
+    left: right:
     left
     // builtins.mapAttrs (
       name: value:
@@ -49,7 +50,9 @@ let
           in
           if kind == "directory" then
             if hasDot name then
-              throw "qnix-sdk: repository paths cannot contain dots: '${builtins.concatStringsSep "/" (prefix ++ [ name ])}'"
+              throw "qnix-sdk: repository paths cannot contain dots: '${
+                builtins.concatStringsSep "/" (prefix ++ [ name ])
+              }'"
             else
               result // visit path (prefix ++ [ name ])
           else if
@@ -152,14 +155,7 @@ let
       throw "qnix-sdk: feature '${name}' declares persistence but does not support 'nixos'"
     else if optionsOnly && !(definition ? options) then
       throw "qnix-sdk: option-only feature '${name}' requires options"
-    else if
-      optionsOnly
-      && (
-        definition ? nixos
-        || definition ? home
-        || definition ? persistence
-      )
-    then
+    else if optionsOnly && (definition ? nixos || definition ? home || definition ? persistence) then
       throw "qnix-sdk: option-only feature '${name}' cannot contain implementations or persistence"
     else if builtins.elem "nixos" environments && !hasNixos && !optionsOnly then
       throw "qnix-sdk: feature '${name}' supports 'nixos' but has no NixOS implementation"
@@ -221,9 +217,7 @@ in
     }:
     let
       featureEntries = discoverNixFiles features;
-      rawFeatures = builtins.mapAttrs (
-        _: entry: loadDefinition "feature" entry
-      ) featureEntries;
+      rawFeatures = builtins.mapAttrs (_: entry: loadDefinition "feature" entry) featureEntries;
 
       featureDescriptors = builtins.mapAttrs (
         name: definition:
@@ -262,7 +256,13 @@ in
             args@{ lib, ... }:
             {
               options = lib.setAttrByPath (sdk.namespace ++ entry.optionPath) (
-                evalSpec "feature '${name}' options" definition.options args
+                evalSpec "feature '${name}' options" definition.options (
+                  args
+                  // {
+                    context = sdk.context;
+                    isGraphical = sdk.isGraphical;
+                  }
+                )
               );
             };
 
@@ -410,9 +410,7 @@ in
         environmentFeatures;
 
       profileEntries = if profiles == null then { } else discoverNixFiles profiles;
-      rawProfiles = builtins.mapAttrs (
-        _: entry: loadDefinition "profile" entry
-      ) profileEntries;
+      rawProfiles = builtins.mapAttrs (_: entry: loadDefinition "profile" entry) profileEntries;
 
       profileDescriptorsFor =
         environment:
@@ -434,9 +432,11 @@ in
               defaults = definition.defaults or { };
               environmentDefaults = defaults.__qnixEnvironment or { };
               directDefaults = builtins.removeAttrs defaults [ "__qnixEnvironment" ];
-              defaultValues =
-                [ directDefaults ]
-                ++ (if environment == "nixos" then
+              defaultValues = [
+                directDefaults
+              ]
+              ++ (
+                if environment == "nixos" then
                   [
                     (environmentDefaults.shared or { })
                     (environmentDefaults.nixos or { })
@@ -446,15 +446,18 @@ in
                   [
                     (environmentDefaults.shared or { })
                     (environmentDefaults.home or { })
-                  ]);
+                  ]
+              );
               mergedDefaults = builtins.foldl' recursiveUpdate { } defaultValues;
               defaultModules =
                 if mergedDefaults == { } then
                   [ ]
                 else
                   [
-                    ({ lib, ... }:
-                      sdk.mkQnixConfig lib (lib.mapAttrsRecursive (_: value: lib.mkDefault value) mergedDefaults))
+                    (
+                      { lib, ... }:
+                      sdk.mkQnixConfig lib (lib.mapAttrsRecursive (_: value: lib.mkDefault value) mergedDefaults)
+                    )
                   ];
             in
             sdk.mkProfile {

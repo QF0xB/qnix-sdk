@@ -15,11 +15,20 @@
   enableOption.description = "sound support";
 
   options =
-    { lib, ... }:
+    {
+      isGraphical,
+      lib,
+      ...
+    }:
     {
       volumeStep = lib.mkOption {
         type = lib.types.int;
         default = 5;
+      };
+
+      graphical = lib.mkOption {
+        type = lib.types.bool;
+        default = isGraphical;
       };
     };
 
@@ -28,6 +37,7 @@
     {
       test.nixosVolume = cfg.volumeStep;
       test.isLaptop = context.laptop;
+      test.isGraphical = cfg.graphical;
     };
 
   home = { cfg, ... }: {
